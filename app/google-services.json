@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "483672717846",
+    "project_id": "confereasy-4af27",
+    "storage_bucket": "confereasy-4af27.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:483672717846:android:95c155aaa2114d337b1337",
+        "android_client_info": {
+          "package_name": "com.example.proyecto20"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCrD_W_QEJlv7KgiK1e8Rj6hV7PHGnrcMM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

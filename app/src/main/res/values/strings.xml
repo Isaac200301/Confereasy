@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name" translatable="false">proyecto2.0</string>
     <string name="default_web_client_id" translatable="false">483672717846-53fpt34oav40t4i28hsvocd4ml16b2mm.apps.googleusercontent.com</string>
+    <string name="confereasy">ConferEasy</string>
+    <string name="sign_up_with_google">Sign up with Google</string>
+    <string name="are_you_new_user_register">Are you new user? Register</string>
 </resources>

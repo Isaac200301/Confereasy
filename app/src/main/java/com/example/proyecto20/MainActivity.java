@@ -118,11 +118,22 @@ public class MainActivity extends AppCompatActivity {
 
     // Método para reemplazar fragments
     private void replaceFragment(Fragment fragment) {
+        if (fragment == null) return;
+
         FragmentManager fragmentManager = getSupportFragmentManager();
+        Fragment currentFragment = fragmentManager.findFragmentById(R.id.frame_layout);
+
+        // Evita reemplazos innecesarios
+        if (currentFragment != null && currentFragment.getClass().equals(fragment.getClass())) {
+            return;
+        }
+
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(R.id.frame_layout, fragment);
+        fragmentTransaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
         fragmentTransaction.commit();
     }
+
 
     // Método para mostrar el diálogo en la parte inferior
     private void showBottomDialog() {

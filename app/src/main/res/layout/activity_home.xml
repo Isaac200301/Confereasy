@@ -43,7 +43,8 @@
             app:fabAlignmentMode="center"
             app:fabCradleMargin="10dp"
             app:fabCradleRoundedCornerRadius="50dp"
-            app:layout_anchorGravity="center_horizontal">
+            app:layout_anchorGravity="center_horizontal"
+            >
 
             <com.google.android.material.bottomnavigation.BottomNavigationView
                 android:id="@+id/bottomNavigationView"
@@ -61,12 +62,12 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="16dp"
-            android:src="@drawable/baseline_edit_note_24"
             android:backgroundTint="@color/white"
-            app:tint="@color/primaryColor"
+            android:src="@drawable/baseline_edit_note_24"
+            app:layout_anchor="@+id/bottomAppBar"
+            app:layout_anchorGravity="top|center"
             app:maxImageSize="40dp"
-            app:layout_anchor="@id/bottomAppBar"
-            app:layout_anchorGravity="center" />
+            app:tint="@color/primaryColor" />
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 

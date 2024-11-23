@@ -7,6 +7,7 @@ import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
@@ -21,13 +22,26 @@ import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.facebook.AccessToken;
+import com.facebook.CallbackManager;
+import com.facebook.FacebookCallback;
+import com.facebook.FacebookException;
+import com.facebook.login.LoginManager;
+import com.facebook.login.LoginResult;
+import com.google.firebase.auth.FacebookAuthProvider;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class LoginActivity extends AppCompatActivity {
 
-    private static final String TAG = "MainActivity";
+    private static final String TAG = "LoginActivity";
     private static final int REQ_ONE_TAP = 2;
 
     private FirebaseAuth auth;
+    private FirebaseFirestore firestore;
     private SignInClient oneTapClient;
     private BeginSignInRequest signInRequest;
 
@@ -35,15 +49,23 @@ public class LoginActivity extends AppCompatActivity {
     private EditText passwordEditText;
     private ImageView loginArrow;
     private Button googleButton;
+    private TextView goToRegisterButton;
+    private CallbackManager callbackManager;
+    private Button facebookButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        // Inicializar Firebase Auth y One Tap Client
+        // Inicializar Firebase Auth y Firestore
         auth = FirebaseAuth.getInstance();
+        firestore = FirebaseFirestore.getInstance();
         oneTapClient = Identity.getSignInClient(this);
+
+        // Inicializar el CallbackManager de Facebook
+        callbackManager = CallbackManager.Factory.create();
+
 
         // Configuración de inicio de sesión con Google
         signInRequest = BeginSignInRequest.builder()
@@ -59,10 +81,17 @@ public class LoginActivity extends AppCompatActivity {
         passwordEditText = findViewById(R.id.passwordEditText);
         loginArrow = findViewById(R.id.loginArrow);
         googleButton = findViewById(R.id.oneTapSignInButton);
+        goToRegisterButton = findViewById(R.id.registerView);
+        facebookButton = findViewById(R.id.facebookLoginButton);
 
         // Configurar listeners de botones
         loginArrow.setOnClickListener(v -> loginUser());
         googleButton.setOnClickListener(v -> signInWithGoogle());
+        facebookButton.setOnClickListener(v -> signInWithFacebook());
+        goToRegisterButton.setOnClickListener(v -> {
+            Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
+            startActivity(intent);
+        });
     }
 
     private void loginUser() {
@@ -80,7 +109,6 @@ public class LoginActivity extends AppCompatActivity {
                 .addOnCompleteListener(this, task -> {
                     loginArrow.setEnabled(true);
                     if (task.isSuccessful()) {
-                        FirebaseUser user = auth.getCurrentUser();
                         Toast.makeText(LoginActivity.this, "Login exitoso", Toast.LENGTH_SHORT).show();
                         startMainActivity();
                     } else {
@@ -110,9 +138,65 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
+    private void signInWithFacebook() {
+        facebookButton.setEnabled(false);
+
+        LoginManager.getInstance().logInWithReadPermissions(this, Arrays.asList("email", "public_profile"));
+        LoginManager.getInstance().registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
+            @Override
+            public void onSuccess(LoginResult loginResult) {
+                handleFacebookAccessToken(loginResult.getAccessToken());
+            }
+
+            @Override
+            public void onCancel() {
+                facebookButton.setEnabled(true);
+            }
+
+            @Override
+            public void onError(FacebookException error) {
+                Log.e(TAG, "Facebook login error: " + error.getMessage());
+                facebookButton.setEnabled(true);
+            }
+        });
+    }
+
+    private void handleFacebookAccessToken(AccessToken token) {
+        AuthCredential credential = FacebookAuthProvider.getCredential(token.getToken());
+        auth.signInWithCredential(credential)
+                .addOnCompleteListener(this, task -> {
+                    facebookButton.setEnabled(true);
+                    if (task.isSuccessful()) {
+                        FirebaseUser user = auth.getCurrentUser();
+                        if (user != null) {
+                            saveUserToFirestore(user);
+                        }
+                    } else {
+                        Toast.makeText(LoginActivity.this, "Error en autenticación con Facebook: " +
+                                task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void saveUserToFirestore(FirebaseUser user) {
+        Map<String, Object> userData = new HashMap<>();
+        userData.put("Nombre", user.getDisplayName());
+        userData.put("Email", user.getEmail());
+        userData.put("Cedula", user.getUid());
+
+        firestore.collection("users").document(user.getUid())
+                .set(userData)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Datos del usuario guardados correctamente");
+                    startMainActivity();
+                })
+                .addOnFailureListener(e -> Log.e(TAG, "Error al guardar los datos del usuario: " + e.getMessage()));
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        callbackManager.onActivityResult(requestCode, resultCode, data);
 
         if (requestCode == REQ_ONE_TAP) {
             try {
@@ -134,8 +218,6 @@ public class LoginActivity extends AppCompatActivity {
         auth.signInWithCredential(firebaseCredential)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
-                        Log.d(TAG, "signInWithCredential:success");
-                        FirebaseUser user = auth.getCurrentUser();
                         startMainActivity();
                     } else {
                         Log.w(TAG, "signInWithCredential:failure", task.getException());
